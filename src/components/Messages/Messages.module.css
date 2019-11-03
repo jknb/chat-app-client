@@ -1,0 +1,11 @@
+.Messages {
+  position: absolute;
+  top: 0;
+  left: 242px;
+}
+
+.Messages2 {
+  position: absolute;
+  left: 500px;
+  bottom: 500px;
+}

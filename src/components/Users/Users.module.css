@@ -1,0 +1,9 @@
+.Users {
+  height: 100%;
+  position: absolute;
+  top: 0;
+  width: 200px;
+  border: solid 1px blue;
+  background: #00aaff;
+  margin: 0;
+}

@@ -1,0 +1,10 @@
+.User {
+  list-style-type: none;
+  width: 80%;
+  padding: 0;
+  border: 1px solid red;
+  margin: 20px 0;
+  text-align: center;
+  background: #ff6200;
+  color: white;
+}
