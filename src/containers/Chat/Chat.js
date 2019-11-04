@@ -4,105 +4,97 @@ import Input from '../../components/Input/Input';
 import Messages from '../../components/Messages/Messages';
 import Users from '../../components/Users/Users';
 import Modal from '../../components/Modal/Modal';
+import Button from '../../components/Button/Button';
 
 import Socket from '../../components/Socket/Socket'
 import socketIOClient from 'socket.io-client';
 
 import classes from './Chat.module.css';
 
-const Chat = (props) => { 
+const Chat = () => {
   const socketRef = useRef();
 
-  const [messageInputValue, setMessageInputValue] = useState('');
-  const [message, setMessage] = useState({
-    username: '',
-    message: ''
-  });
+  const [inputValue, setInputValue] = useState({ username: '', message: '' });
+  const [users, setUsers] = useState([]);
   const [messages, setMessages] = useState([]);
   const [loggingIn, setLoggingIn] = useState(true);
-  const [usernameInputValue, setUsernameInputValue] = useState('');
-  const [users, setUsers] = useState([]);
 
   useEffect(() => {
     socketRef.current = socketIOClient(Socket);
+
     socketRef.current.on('new message', receiveMessage);
-    socketRef.current.on('new user', receiveUsers);
+    socketRef.current.on('new username', receiveUser);
+    socketRef.current.on('user left', (usernames) => setUsers(usernames));
   }, []);
 
-  const receiveUsers = user => {
+  const receiveMessage = (message) => {
+    setMessages(messages => messages.concat(message));
+  }
+
+  const receiveUser = (user) => {
     setUsers(users => users.concat(user));
   }
 
-  const receiveMessage = message => {
-    setMessages(msgs => msgs.concat(message));
+  const send = (event, data) => {
+    socketRef.current.emit(event , data);
   }
 
-  const sendMessage = (message) => {
-    socketRef.current.emit('new message', message);
+  const submitHandler = (input) => {
+    if (inputValue[input].trim().length > 0) {
+      setInputValue(prevState => ({ ...prevState, [input]: '' }));
+      send(`new ${input}`, inputValue[input]);
+    }
   }
 
-  const sendUsername = (username) => {
-    socketRef.current.emit('new user', username);
+  const updateInputValue = (event, input) => {
+    setInputValue({ ...inputValue, [input]: event.target.value });
   }
 
-  const usernameEnteredHandler = (event) => {
-    event.preventDefault();
-    setUsernameInputValue('');
-    setLoggingIn(prevState => !prevState);
-
-    const submittedUsername = event.target.username.value;
-    sendUsername(submittedUsername);
-  }
-
-  const submitMessageHandler = (event) => {
-    event.preventDefault();
-    setMessageInputValue('');
-
-    const submittedMessage = event.target.message.value;
-    setMessage(submittedMessage);
-    sendMessage(submittedMessage);
-  }
-
-  const updateMessageInputValue = (event) => {
-    setMessageInputValue(event.target.value);
-  }
-
-  const updateUsernameInputValue = (event) => {
-    setUsernameInputValue(event.target.value);
-  }
-  
   return (
     <>
       {loggingIn
         ?
-          <Modal 
-            showBackdrop={loggingIn}
-            submitted={usernameEnteredHandler}
-            placeholder={"Enter a username"}
-            name={"username"}
-            value={usernameInputValue}
-            changed={updateUsernameInputValue}
-            buttonValue={"Submit"}
-          /> 
-        :  
-          null
+        <Modal showBackdrop={loggingIn}>
+          <Input
+            placeholder={'Enter a username'}
+            value={inputValue.username}
+            changed={(e) => updateInputValue(e, 'username')}
+            keyPressed={(e) => {
+              if (e.key === 'Enter') {
+                submitHandler('username');
+                setLoggingIn(prevState => !prevState);
+              }
+            }}
+          />
+          <Button
+            value={'Submit'} 
+            clicked={() => {
+              submitHandler('username');
+              setLoggingIn(prevState => !prevState);
+            }}
+          />
+        </Modal>
+        :
+        null
       }
-      <Users 
+      <Users
         users={users}
       />
       <Messages
         messages={messages}
       />
       <div className={classes.Input}>
-        <Input 
-          submitted={submitMessageHandler}
-          placeholder={"Enter a message"} 
-          name={"message"} 
-          value={messageInputValue}
-          changed={updateMessageInputValue}
-          buttonValue={"Send"}      
+        <Input
+          placeholder={'Enter a message'}
+          value={inputValue.message}
+          changed={(e) => updateInputValue(e, 'message')}
+          keyPressed={(e) => e.key === 'Enter' && submitHandler('message')}
         />
-      </div>  
+        <Button
+          value={'Send'}
+          clicked={() => submitHandler('message')}
+        />
+      </div>
     </>
   );
 };

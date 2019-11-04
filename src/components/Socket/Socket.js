@@ -1,3 +1,3 @@
-const Socket = 'https://chat-app-agile-server.herokuapp.com/';
+const Socket = 'localhost:4001';
 
 export default Socket;
