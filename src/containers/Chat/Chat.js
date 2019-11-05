@@ -22,33 +22,34 @@ const Chat = () => {
   useEffect(() => {
     socketRef.current = socketIOClient(Socket);
 
-    socketRef.current.on('new message', receiveMessage);
-    socketRef.current.on('new username', receiveUser);
-    socketRef.current.on('user left', (usernames) => setUsers(usernames));
+    socketRef.current.on('new_message', eventReceiver(setMessages));
+    socketRef.current.on('new_username', eventReceiver(setUsers));
   }, []);
 
-  const receiveMessage = (message) => {
-    setMessages(messages => messages.concat(message));
+  useEffect(() => {
+    socketRef.current.on('users_online', (usernames) => setUsers(usernames));
+
+    return (() => {
+      socketRef.current.off('user_left');
+    });
+  })
+
+  const eventReceiver = fn => data => {
+    fn(fnData => fnData.concat(data));
   }
 
-  const receiveUser = (user) => {
-    setUsers(users => users.concat(user));
-  }
-
-  const send = (event, data) => {
+  const eventEmmiter = (event, data) => {
     socketRef.current.emit(event , data);
   }
 
   const submitHandler = (input) => {
     if (inputValue[input].trim().length > 0) {
       setInputValue(prevState => ({ ...prevState, [input]: '' }));
-      send(`new ${input}`, inputValue[input]);
+      eventEmmiter(`new_${input}`, inputValue[input]);
     }
   }
 
-  const updateInputValue = (event, input) => {
-    setInputValue({ ...inputValue, [input]: event.target.value });
-  }
+  const updateInputValue = (event, input) => setInputValue({ ...inputValue, [input]: event.target.value });
 
   return (
     <>
