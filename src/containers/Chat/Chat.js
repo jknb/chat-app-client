@@ -21,31 +21,29 @@ const Chat = () => {
 
   useEffect(() => {
     socketRef.current = socketIOClient(Socket);
-
+    
+    socketRef.current.on('users_online', usernames => setUsers(usernames));
+    
     socketRef.current.on('new_message', eventReceiver(setMessages));
     socketRef.current.on('new_username', eventReceiver(setUsers));
   }, []);
 
-  useEffect(() => {
-    socketRef.current.on('users_online', (usernames) => setUsers(usernames));
-
-    return (() => {
-      socketRef.current.off('user_left');
-    });
-  })
-
   const eventReceiver = fn => data => {
-    fn(fnData => fnData.concat(data));
+    fn(fnData => [...fnData, data]);
   }
 
   const eventEmmiter = (event, data) => {
     socketRef.current.emit(event , data);
   }
 
-  const submitHandler = (input) => {
+  const submitHandler = (input, loggingIn = false) => {
     if (inputValue[input].trim().length > 0) {
       setInputValue(prevState => ({ ...prevState, [input]: '' }));
       eventEmmiter(`new_${input}`, inputValue[input]);
+      
+      if (loggingIn) {
+        setLoggingIn(prevState => !prevState);
+      }
     }
   }
 
@@ -60,19 +58,11 @@ const Chat = () => {
             placeholder={'Enter a username'}
             value={inputValue.username}
             changed={(e) => updateInputValue(e, 'username')}
-            keyPressed={(e) => {
-              if (e.key === 'Enter') {
-                submitHandler('username');
-                setLoggingIn(prevState => !prevState);
-              }
-            }}
+            keyPressed={(e) => e.key === 'Enter' && submitHandler('username', loggingIn)}
           />
           <Button
             value={'Submit'} 
-            clicked={() => {
-              submitHandler('username');
-              setLoggingIn(prevState => !prevState);
-            }}
+            clicked={() => submitHandler('username', loggingIn)}
           />
         </Modal>
         :
